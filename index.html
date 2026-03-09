@@ -144,3 +144,15 @@
 </script>
 </body>
 </html>
+    function init() {
+        sequence = getSeededSequence(SEED);
+        const today = new Date().setHours(0,0,0,0);
+        const daysPassed = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
+        loadPokemon(sequence[daysPassed % 1025]);
+        updateTracker();
+    }
+
+    init();
+</script>
+</body>
+</html>
