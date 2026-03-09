@@ -18,7 +18,6 @@
         #pokemon-img { width: 220px; height: 220px; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1)); }
         h1 { text-transform: capitalize; margin: 10px 0; font-size: 2rem; color: #333; }
         
-        /* Timer Style */
         .timer-box { 
             background: #333; color: #00ff00; font-family: monospace; 
             padding: 8px 15px; border-radius: 5px; display: inline-block; margin-top: 10px; font-size: 1.1rem;
@@ -39,7 +38,12 @@
             width: 100%; max-width: 450px; margin-top: 20px; 
         }
         .hist-item { background: white; padding: 10px; border-radius: 15px; text-align: center; font-size: 0.7rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .hist-item img { width: 100%; max-width: 600px; }
+        .hist-item img { width: 100%; }
+
+        .share-btn {
+            margin-top: 15px; background: #25D366; color: white; 
+            border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;
+        }
     </style>
 </head>
 <body>
@@ -50,6 +54,8 @@
         <h1 id="pokemon-name">Searching...</h1>
         <div id="types"></div>
         
+        <button class="share-btn" onclick="sharePokemon()">📤 SHARE POKÉMON</button>
+
         <div style="margin-top: 20px; font-size: 0.8rem; color: #555;">NEXT POKÉMON IN:</div>
         <div class="timer-box" id="timer">00:00:00</div>
     </div>
@@ -101,7 +107,7 @@
         const daysPassed = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
         
         displayMain(masterSequence[daysPassed % TOTAL_POKE]);
-        for(let i=1; i<=4; i++) { // Showing 4 for cleaner mobile view
+        for(let i=1; i<=4; i++) {
             displayHistory(masterSequence[(daysPassed - i) % TOTAL_POKE]);
         }
         
@@ -143,6 +149,19 @@
             resultArea.innerHTML = `<strong>${data.name.toUpperCase()}</strong> arrives on:<br><span style="color:var(--pk-blue); font-size: 1.1rem;">${resultDate.toDateString()}</span>`;
         } catch (e) {
             alert("Pokémon not found! Check your spelling.");
+        }
+    }
+
+    async function sharePokemon() {
+        const name = document.getElementById('pokemon-name').innerText;
+        const url = window.location.href;
+        const text = `Today's Pokémon is ${name.toUpperCase()}! Check yours at:`;
+
+        if (navigator.share) {
+            navigator.share({ title: 'PokéDaily', text: text, url: url });
+        } else {
+            navigator.clipboard.writeText(`${text} ${url}`);
+            alert("Link copied to clipboard!");
         }
     }
 
