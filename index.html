@@ -100,3 +100,71 @@
         if (discovered.includes(id)) {
             showInfo();
         }
+        if (discovered.includes(id)) {
+            showInfo();
+        } else {
+            hideInfo();
+        }
+    }
+
+    function showInfo() {
+        document.getElementById('pokemon-img').classList.remove('silhouette');
+        document.getElementById('info-screen').style.display = 'block';
+        document.getElementById('reveal-btn').style.display = 'none';
+    }
+
+    function hideInfo() {
+        document.getElementById('pokemon-img').classList.add('silhouette');
+        document.getElementById('info-screen').style.display = 'none';
+        document.getElementById('reveal-btn').style.display = 'block';
+    }
+
+    function revealCurrent() {
+        const today = new Date().setHours(0,0,0,0);
+        const daysPassed = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
+        const id = sequence[daysPassed % 1025];
+        
+        if (!discovered.includes(id)) {
+            discovered.push(id);
+            localStorage.setItem('pokedex', JSON.stringify(discovered));
+            updateTracker();
+        }
+        showInfo();
+    }
+
+    function updateTracker() {
+        document.getElementById('count').innerText = discovered.length;
+        const grid = document.getElementById('tracker-grid');
+        grid.innerHTML = '';
+        discovered.slice(-15).reverse().forEach(id => {
+            const img = document.createElement('img');
+            img.src = `https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/${id}.png`;
+            img.className = 'tracked-icon unlocked';
+            grid.appendChild(img);
+        });
+    }
+
+    function lookupDate() {
+        const dateVal = document.getElementById('date-picker').value;
+        if (!dateVal) return;
+        const pickedDate = new Date(dateVal).setHours(0,0,0,0);
+
+        const daysPassed = Math.floor((pickedDate - START_DATE) / (1000 * 60 * 60 * 24));
+        const id = sequence[daysPassed % 1025];
+        
+        document.getElementById('date-label').innerText = new Date(pickedDate).toDateString();
+        loadPokemon(id, false);
+    }
+
+    function init() {
+        sequence = getSeededSequence(SEED);
+        const today = new Date().setHours(0,0,0,0);
+        const daysPassed = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
+        loadPokemon(sequence[daysPassed % 1025]);
+        updateTracker();
+    }
+
+    init();
+</script>
+</body>
+</html>
