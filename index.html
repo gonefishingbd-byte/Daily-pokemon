@@ -3,25 +3,30 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ultimate PokéDaily</title>
+    <title>PokéDaily: Ultimate Tracker</title>
     <style>
         :root { --pk-red: #ff1c1c; --pk-blue: #3b4cca; --bg: #f4f7f9; }
         body { background: var(--bg); font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
-        .container { background: white; border-radius: 25px; padding: 2rem; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 400px; position: relative; }
+        .container { background: white; border-radius: 25px; padding: 2rem; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 400px; }
         
-        /* Guessing Mode Filter */
         #pokemon-img { width: 220px; transition: filter 0.3s; cursor: pointer; }
         .silhouette { filter: brightness(0) !important; }
         
-        .shiny-sparkle { color: #f1c40f; font-weight: bold; display: none; margin-bottom: 5px; }
-        .type-pill { display: inline-block; padding: 5px 12px; border-radius: 15px; margin: 3px; color: white; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
-        .weakness-box { margin-top: 15px; font-size: 0.75rem; color: #666; background: #f9f9f9; padding: 10px; border-radius: 10px; }
+        .type-pill { display: inline-block; padding: 5px 12px; border-radius: 15px; margin: 3px; color: white; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
+        .stats { margin-top: 15px; font-size: 0.8rem; background: #eee; padding: 10px; border-radius: 10px; }
         
-        button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .btn-audio { background: #555; color: white; margin: 5px; }
-        .btn-reveal { background: var(--pk-blue); color: white; margin-top: 10px; width: 100%; }
+        button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 5px; }
+        .btn-main { background: var(--pk-blue); color: white; width: 100%; }
         
-        /* Type Colors Map */
+        .tracker { margin-top: 30px; width: 100%; max-width: 450px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
+        .tracker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 10px; }
+        .tracked-icon { width: 40px; height: 40px; background: #f0f0f0; border-radius: 5px; opacity: 0.3; }
+        .tracked-icon.unlocked { opacity: 1; background: #e3f2fd; }
+
+        .search-section { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; }
+        input[type="date"] { padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
+
+        /* Type Colors */
         .fire { background: #ff9d54; } .water { background: #4a90da; } .grass { background: #5fbd58; }
         .electric { background: #f2d144; } .psychic { background: #f97176; } .ice { background: #74cec0; }
         .dragon { background: #0773c7; } .dark { background: #5a5366; } .fairy { background: #ec8fe6; }
@@ -33,26 +38,36 @@
 <body>
 
     <div class="container">
-        <div id="shiny-tag" class="shiny-sparkle">✨ SHINY FOUND! ✨</div>
-        <img id="pokemon-img" class="silhouette" src="" alt="Who's that Pokémon?">
+        <div id="date-label" style="font-weight: bold; color: #888; margin-bottom: 10px;">TODAY</div>
+        <img id="pokemon-img" class="silhouette" src="" alt="?">
         
-        <div id="info-screen" style="visibility: hidden;">
-            <h1 id="pokemon-name" style="text-transform: capitalize;">Name</h1>
+        <div id="info-screen" style="display: none;">
+            <h1 id="pokemon-name" style="text-transform: capitalize;">?</h1>
             <div id="types"></div>
-            <button class="btn-audio" onclick="playCry()">🔊 Play Cry</button>
-            <div class="weakness-box">
-                <strong>Weaknesses:</strong><br>
-                <div id="weaknesses" style="margin-top:5px"></div>
-            </div>
+            <div class="stats">Weaknesses: <div id="weaknesses"></div></div>
         </div>
         
-        <button id="reveal-btn" class="btn-reveal" onclick="reveal()">WHO'S THAT POKÉMON?</button>
+        <button id="reveal-btn" class="btn-main" onclick="revealCurrent()">WHO'S THAT POKÉMON?</button>
+    </div>
+
+    <div class="search-section">
+        <label style="font-size: 0.8rem; font-weight: bold;">LOOK UP A DATE:</label>
+        <div style="display: flex; gap: 5px;">
+            <input type="date" id="date-picker">
+            <button style="background: #555; color: white;" onclick="lookupDate()">GO</button>
+        </div>
+    </div>
+
+    <div class="tracker">
+        <strong>YOUR POKÉDEX: <span id="count">0</span>/1025</strong>
+        <div class="tracker-grid" id="tracker-grid"></div>
     </div>
 
 <script>
     const START_DATE = new Date("2024-01-01").setHours(0,0,0,0);
     const SEED = 8888;
-    let currentCry = "";
+    let sequence = [];
+    let discovered = JSON.parse(localStorage.getItem('pokedex')) || [];
 
     function getSeededSequence(seed) {
         let ids = Array.from({length: 1025}, (_, i) => i + 1);
@@ -64,61 +79,24 @@
         return ids;
     }
 
-    async function init() {
-        const sequence = getSeededSequence(SEED);
-        const today = new Date().setHours(0,0,0,0);
-        const daysPassed = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
-        const dailyID = sequence[daysPassed % 1025];
-
-        // 1. Shiny Logic (Seed + Date ensures same shiny for everyone today)
-        const shinyChance = (SEED + daysPassed) % 4096 === 0; // Standard Game Odds
-
-        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${dailyID}`);
+    async function loadPokemon(id, isToday = true) {
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
         const data = await res.json();
         
-        // Load Data
         document.getElementById('pokemon-name').innerText = data.name;
-        document.getElementById('pokemon-img').src = shinyChance ? 
-            data.sprites.other['official-artwork'].front_shiny : 
-            data.sprites.other['official-artwork'].front_default;
+        document.getElementById('pokemon-img').src = data.sprites.other['official-artwork'].front_default;
         
-        if(shinyChance) document.getElementById('shiny-tag').style.display = 'block';
+        document.getElementById('types').innerHTML = data.types.map(t => `<span class="type-pill ${t.type.name}">${t.type.name}</span>`).join('');
         
-        currentCry = data.cries.latest;
-        
-        // Load Types
-        document.getElementById('types').innerHTML = data.types.map(t => 
-            `<span class="type-pill ${t.type.name}">${t.type.name}</span>`
-        ).join('');
-
         // Load Weaknesses
-        fetchWeaknesses(data.types);
-    }
-
-    async function fetchWeaknesses(types) {
         let weaknesses = new Set();
-        for(let t of types) {
-            const res = await fetch(t.type.url);
-            const typeData = await res.json();
-            typeData.damage_relations.double_damage_from.forEach(w => weaknesses.add(w.name));
+        for(let t of data.types) {
+            const tres = await fetch(t.type.url);
+            const tdata = await tres.json();
+            tdata.damage_relations.double_damage_from.forEach(w => weaknesses.add(w.name));
         }
-        document.getElementById('weaknesses').innerHTML = Array.from(weaknesses).map(w => 
-            `<span class="type-pill ${w}" style="font-size:0.6rem; padding:2px 8px">${w}</span>`
-        ).join('');
-    }
+        document.getElementById('weaknesses').innerHTML = Array.from(weaknesses).map(w => `<span class="type-pill ${w}" style="font-size: 0.5rem;">${w}</span>`).join('');
 
-    function reveal() {
-        document.getElementById('pokemon-img').classList.remove('silhouette');
-        document.getElementById('info-screen').style.visibility = 'visible';
-        document.getElementById('reveal-btn').style.display = 'none';
-        playCry();
-    }
-
-    function playCry() {
-        if(currentCry) new Audio(currentCry).play();
-    }
-
-    init();
-</script>
-</body>
-</html>
+        if (discovered.includes(id)) {
+            showInfo();
+        }
