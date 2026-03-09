@@ -27,7 +27,6 @@
     </style>
 </head>
 <body>
-
     <div class="container">
         <div id="date-label" style="font-weight: bold; color: #888; margin-bottom: 10px;">TODAY</div>
         <img id="pokemon-img" class="silhouette" src="" alt="?">
@@ -132,27 +131,12 @@
         loadPokemon(id);
     }
 
-    function init() {
-        sequence = getSeededSequence(SEED);
-        const today = new Date().setHours(0,0,0,0);
-        const daysPassed = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
-        loadPokemon(sequence[daysPassed % 1025]);
-        updateTracker();
-    }
-
-    init();
-</script>
-</body>
-</html>
-    function init() {
-        sequence = getSeededSequence(SEED);
-        const today = new Date().setHours(0,0,0,0);
-        const daysPassed = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
-        loadPokemon(sequence[daysPassed % 1025]);
-        updateTracker();
-    }
-
-    init();
+    // Initialize application
+    sequence = getSeededSequence(SEED);
+    const today = new Date().setHours(0,0,0,0);
+    const daysPassed = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
+    loadPokemon(sequence[daysPassed % 1025]);
+    updateTracker();
 </script>
 </body>
 </html>
