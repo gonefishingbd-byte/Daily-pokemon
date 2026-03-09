@@ -3,82 +3,59 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PokéDaily Master</title>
+    <title>Ultimate PokéDaily</title>
     <style>
         :root { --pk-red: #ff1c1c; --pk-blue: #3b4cca; --bg: #f4f7f9; }
-        body { 
-            background: var(--bg); font-family: 'Segoe UI', Tahoma, sans-serif; 
-            display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0;
-        }
-        .container {
-            background: white; border-radius: 25px; padding: 2rem;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
-            text-align: center; width: 100%; max-width: 400px; border-bottom: 8px solid var(--pk-blue);
-        }
-        #pokemon-img { width: 220px; height: 220px; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1)); }
-        h1 { text-transform: capitalize; margin: 10px 0; font-size: 2rem; color: #333; }
+        body { background: var(--bg); font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
+        .container { background: white; border-radius: 25px; padding: 2rem; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 400px; position: relative; }
         
-        .timer-box { 
-            background: #333; color: #00ff00; font-family: monospace; 
-            padding: 8px 15px; border-radius: 5px; display: inline-block; margin-top: 10px; font-size: 1.1rem;
-        }
-
-        .search-area { margin: 25px 0; width: 100%; max-width: 400px; }
-        .input-group { display: flex; gap: 8px; }
-        input { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 10px; outline: none; }
-        button { padding: 10px 20px; background: var(--pk-red); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        /* Guessing Mode Filter */
+        #pokemon-img { width: 220px; transition: filter 0.3s; cursor: pointer; }
+        .silhouette { filter: brightness(0) !important; }
         
-        #search-result { 
-            margin-top: 10px; padding: 15px; background: white; border-radius: 10px; 
-            display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-left: 5px solid var(--pk-blue);
-        }
-
-        .history-grid { 
-            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; 
-            width: 100%; max-width: 450px; margin-top: 20px; 
-        }
-        .hist-item { background: white; padding: 10px; border-radius: 15px; text-align: center; font-size: 0.7rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
-        .hist-item img { width: 100%; }
-
-        .share-btn {
-            margin-top: 15px; background: #25D366; color: white; 
-            border: none; padding: 10px 15px; border-radius: 8px; font-weight: bold; cursor: pointer;
-        }
+        .shiny-sparkle { color: #f1c40f; font-weight: bold; display: none; margin-bottom: 5px; }
+        .type-pill { display: inline-block; padding: 5px 12px; border-radius: 15px; margin: 3px; color: white; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
+        .weakness-box { margin-top: 15px; font-size: 0.75rem; color: #666; background: #f9f9f9; padding: 10px; border-radius: 10px; }
+        
+        button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .btn-audio { background: #555; color: white; margin: 5px; }
+        .btn-reveal { background: var(--pk-blue); color: white; margin-top: 10px; width: 100%; }
+        
+        /* Type Colors Map */
+        .fire { background: #ff9d54; } .water { background: #4a90da; } .grass { background: #5fbd58; }
+        .electric { background: #f2d144; } .psychic { background: #f97176; } .ice { background: #74cec0; }
+        .dragon { background: #0773c7; } .dark { background: #5a5366; } .fairy { background: #ec8fe6; }
+        .normal { background: #a4acaf; } .fighting { background: #d56723; } .flying { background: #3dc7ef; }
+        .poison { background: #b97fc9; } .ground { background: #f7de3f; color: #333 !important; } .rock { background: #a38c21; }
+        .bug { background: #729f3f; } .ghost { background: #7b62a3; } .steel { background: #9eb7b8; }
     </style>
 </head>
 <body>
 
     <div class="container">
-        <div id="current-date" style="font-weight: bold; color: #888;"></div>
-        <img id="pokemon-img" src="" alt="Loading...">
-        <h1 id="pokemon-name">Searching...</h1>
-        <div id="types"></div>
+        <div id="shiny-tag" class="shiny-sparkle">✨ SHINY FOUND! ✨</div>
+        <img id="pokemon-img" class="silhouette" src="" alt="Who's that Pokémon?">
         
-        <button class="share-btn" onclick="sharePokemon()">📤 SHARE POKÉMON</button>
-
-        <div style="margin-top: 20px; font-size: 0.8rem; color: #555;">NEXT POKÉMON IN:</div>
-        <div class="timer-box" id="timer">00:00:00</div>
-    </div>
-
-    <div class="search-area">
-        <div class="input-group">
-            <input type="text" id="search-input" placeholder="Enter Pokémon Name...">
-            <button onclick="searchPokemon()">FIND</button>
+        <div id="info-screen" style="visibility: hidden;">
+            <h1 id="pokemon-name" style="text-transform: capitalize;">Name</h1>
+            <div id="types"></div>
+            <button class="btn-audio" onclick="playCry()">🔊 Play Cry</button>
+            <div class="weakness-box">
+                <strong>Weaknesses:</strong><br>
+                <div id="weaknesses" style="margin-top:5px"></div>
+            </div>
         </div>
-        <div id="search-result"></div>
+        
+        <button id="reveal-btn" class="btn-reveal" onclick="reveal()">WHO'S THAT POKÉMON?</button>
     </div>
-
-    <h3 style="color: #444;">Recent History</h3>
-    <div class="history-grid" id="history-list"></div>
 
 <script>
     const START_DATE = new Date("2024-01-01").setHours(0,0,0,0);
-    const TOTAL_POKE = 1025;
     const SEED = 8888;
-    let masterSequence = [];
+    let currentCry = "";
 
     function getSeededSequence(seed) {
-        let ids = Array.from({length: TOTAL_POKE}, (_, i) => i + 1);
+        let ids = Array.from({length: 1025}, (_, i) => i + 1);
         for (let i = ids.length - 1; i > 0; i--) {
             seed = (seed * 9301 + 49297) % 233280;
             let j = Math.floor((seed / 233280) * (i + 1));
@@ -87,82 +64,58 @@
         return ids;
     }
 
-    function updateTimer() {
-        const now = new Date();
-        const tomorrow = new Date();
-        tomorrow.setDate(now.getDate() + 1);
-        tomorrow.setHours(0, 0, 0, 0);
-
-        const diff = tomorrow - now;
-        const hours = Math.floor(diff / 3600000).toString().padStart(2, '0');
-        const mins = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
-        const secs = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
-
-        document.getElementById('timer').innerText = `${hours}:${mins}:${secs}`;
-    }
-
     async function init() {
-        masterSequence = getSeededSequence(SEED);
+        const sequence = getSeededSequence(SEED);
         const today = new Date().setHours(0,0,0,0);
         const daysPassed = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
-        
-        displayMain(masterSequence[daysPassed % TOTAL_POKE]);
-        for(let i=1; i<=4; i++) {
-            displayHistory(masterSequence[(daysPassed - i) % TOTAL_POKE]);
-        }
-        
-        setInterval(updateTimer, 1000);
-        updateTimer();
-    }
+        const dailyID = sequence[daysPassed % 1025];
 
-    async function displayMain(id) {
-        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+        // 1. Shiny Logic (Seed + Date ensures same shiny for everyone today)
+        const shinyChance = (SEED + daysPassed) % 4096 === 0; // Standard Game Odds
+
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${dailyID}`);
         const data = await res.json();
-        document.getElementById('current-date').innerText = new Date().toDateString();
+        
+        // Load Data
         document.getElementById('pokemon-name').innerText = data.name;
-        document.getElementById('pokemon-img').src = data.sprites.other['official-artwork'].front_default;
-    }
-
-    async function displayHistory(id) {
-        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
-        const data = await res.json();
-        const div = document.createElement('div');
-        div.className = 'hist-item';
-        div.innerHTML = `<img src="${data.sprites.front_default}"><br><strong>${data.name}</strong>`;
-        document.getElementById('history-list').appendChild(div);
-    }
-
-    async function searchPokemon() {
-        const val = document.getElementById('search-input').value.toLowerCase().trim();
-        if(!val) return;
+        document.getElementById('pokemon-img').src = shinyChance ? 
+            data.sprites.other['official-artwork'].front_shiny : 
+            data.sprites.other['official-artwork'].front_default;
         
-        try {
-            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${val}`);
-            const data = await res.json();
-            const dayIndex = masterSequence.indexOf(data.id);
-            
-            const resultDate = new Date(START_DATE);
-            resultDate.setDate(resultDate.getDate() + dayIndex);
+        if(shinyChance) document.getElementById('shiny-tag').style.display = 'block';
+        
+        currentCry = data.cries.latest;
+        
+        // Load Types
+        document.getElementById('types').innerHTML = data.types.map(t => 
+            `<span class="type-pill ${t.type.name}">${t.type.name}</span>`
+        ).join('');
 
-            const resultArea = document.getElementById('search-result');
-            resultArea.style.display = 'block';
-            resultArea.innerHTML = `<strong>${data.name.toUpperCase()}</strong> arrives on:<br><span style="color:var(--pk-blue); font-size: 1.1rem;">${resultDate.toDateString()}</span>`;
-        } catch (e) {
-            alert("Pokémon not found! Check your spelling.");
-        }
+        // Load Weaknesses
+        fetchWeaknesses(data.types);
     }
 
-    async function sharePokemon() {
-        const name = document.getElementById('pokemon-name').innerText;
-        const url = window.location.href;
-        const text = `Today's Pokémon is ${name.toUpperCase()}! Check yours at:`;
-
-        if (navigator.share) {
-            navigator.share({ title: 'PokéDaily', text: text, url: url });
-        } else {
-            navigator.clipboard.writeText(`${text} ${url}`);
-            alert("Link copied to clipboard!");
+    async function fetchWeaknesses(types) {
+        let weaknesses = new Set();
+        for(let t of types) {
+            const res = await fetch(t.type.url);
+            const typeData = await res.json();
+            typeData.damage_relations.double_damage_from.forEach(w => weaknesses.add(w.name));
         }
+        document.getElementById('weaknesses').innerHTML = Array.from(weaknesses).map(w => 
+            `<span class="type-pill ${w}" style="font-size:0.6rem; padding:2px 8px">${w}</span>`
+        ).join('');
+    }
+
+    function reveal() {
+        document.getElementById('pokemon-img').classList.remove('silhouette');
+        document.getElementById('info-screen').style.visibility = 'visible';
+        document.getElementById('reveal-btn').style.display = 'none';
+        playCry();
+    }
+
+    function playCry() {
+        if(currentCry) new Audio(currentCry).play();
     }
 
     init();
