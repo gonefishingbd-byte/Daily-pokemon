@@ -3,51 +3,73 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PokéDaily - Your Daily Companion</title>
+    <title>PokéDaily Master</title>
     <style>
-        :root { --pk-red: #ff1c1c; --pk-blue: #3b4cca; }
+        :root { --pk-red: #ff1c1c; --pk-blue: #3b4cca; --bg: #f4f7f9; }
         body { 
-            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-            display: flex; flex-direction: column; align-items: center; justify-content: center;
-            min-height: 100vh; margin: 0; color: #333;
+            background: var(--bg); font-family: 'Segoe UI', Tahoma, sans-serif; 
+            display: flex; flex-direction: column; align-items: center; padding: 20px; margin: 0;
         }
         .container {
-            background: white; border-radius: 30px; padding: 2rem;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.15);
-            text-align: center; width: 90%; max-width: 400px;
-            border-top: 10px solid var(--pk-red);
+            background: white; border-radius: 25px; padding: 2rem;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.1);
+            text-align: center; width: 100%; max-width: 400px; border-bottom: 8px solid var(--pk-blue);
         }
-        #pokemon-img { width: 100%; max-width: 250px; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1)); }
-        h1 { font-size: 2.2rem; margin: 0.5rem 0; text-transform: capitalize; letter-spacing: -1px; }
-        .date { opacity: 0.6; font-weight: 600; text-transform: uppercase; font-size: 0.8rem; }
-        .type-pill {
-            display: inline-block; padding: 6px 16px; border-radius: 50px;
-            background: #eee; margin: 4px; font-weight: bold; font-size: 0.75rem;
-            text-transform: uppercase; color: white;
+        #pokemon-img { width: 220px; height: 220px; filter: drop-shadow(0 10px 10px rgba(0,0,0,0.1)); }
+        h1 { text-transform: capitalize; margin: 10px 0; font-size: 2rem; color: #333; }
+        
+        /* Timer Style */
+        .timer-box { 
+            background: #333; color: #00ff00; font-family: monospace; 
+            padding: 8px 15px; border-radius: 5px; display: inline-block; margin-top: 10px; font-size: 1.1rem;
         }
-        /* Type Colors */
-        .fire { background: #ff9d55; } .water { background: #5090d6; } .grass { background: #63bc5a; }
-        .electric { background: #f4d23c; } .psychic { background: #fa7179; } .ice { background: #73cebf; }
-        .dragon { background: #0b6dc3; } .dark { background: #5a5366; } .fairy { background: #ec8fe6; }
-        .normal { background: #919aa2; } .fighting { background: #ce4069; } .flying { background: #89aae3; }
-        .poison { background: #b667cf; } .ground { background: #d97746; } .rock { background: #c7b78b; }
-        .bug { background: #91c12f; } .ghost { background: #5269ac; } .steel { background: #5a8ea1; }
+
+        .search-area { margin: 25px 0; width: 100%; max-width: 400px; }
+        .input-group { display: flex; gap: 8px; }
+        input { flex: 1; padding: 12px; border: 2px solid #ddd; border-radius: 10px; outline: none; }
+        button { padding: 10px 20px; background: var(--pk-red); color: white; border: none; border-radius: 10px; font-weight: bold; cursor: pointer; }
+        
+        #search-result { 
+            margin-top: 10px; padding: 15px; background: white; border-radius: 10px; 
+            display: none; box-shadow: 0 5px 15px rgba(0,0,0,0.05); border-left: 5px solid var(--pk-blue);
+        }
+
+        .history-grid { 
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; 
+            width: 100%; max-width: 450px; margin-top: 20px; 
+        }
+        .hist-item { background: white; padding: 10px; border-radius: 15px; text-align: center; font-size: 0.7rem; box-shadow: 0 4px 6px rgba(0,0,0,0.05); }
+        .hist-item img { width: 100%; max-width: 600px; }
     </style>
 </head>
 <body>
 
-<div class="container">
-    <div class="date" id="current-date"></div>
-    <img id="pokemon-img" src="" alt="Scanning...">
-    <h1 id="pokemon-name">Searching...</h1>
-    <div id="types"></div>
-</div>
+    <div class="container">
+        <div id="current-date" style="font-weight: bold; color: #888;"></div>
+        <img id="pokemon-img" src="" alt="Loading...">
+        <h1 id="pokemon-name">Searching...</h1>
+        <div id="types"></div>
+        
+        <div style="margin-top: 20px; font-size: 0.8rem; color: #555;">NEXT POKÉMON IN:</div>
+        <div class="timer-box" id="timer">00:00:00</div>
+    </div>
+
+    <div class="search-area">
+        <div class="input-group">
+            <input type="text" id="search-input" placeholder="Enter Pokémon Name...">
+            <button onclick="searchPokemon()">FIND</button>
+        </div>
+        <div id="search-result"></div>
+    </div>
+
+    <h3 style="color: #444;">Recent History</h3>
+    <div class="history-grid" id="history-list"></div>
 
 <script>
     const START_DATE = new Date("2024-01-01").setHours(0,0,0,0);
     const TOTAL_POKE = 1025;
-    const SEED = 8888; // Unique seed for your app
+    const SEED = 8888;
+    let masterSequence = [];
 
     function getSeededSequence(seed) {
         let ids = Array.from({length: TOTAL_POKE}, (_, i) => i + 1);
@@ -59,28 +81,68 @@
         return ids;
     }
 
-    async function init() {
+    function updateTimer() {
         const now = new Date();
+        const tomorrow = new Date();
+        tomorrow.setDate(now.getDate() + 1);
+        tomorrow.setHours(0, 0, 0, 0);
+
+        const diff = tomorrow - now;
+        const hours = Math.floor(diff / 3600000).toString().padStart(2, '0');
+        const mins = Math.floor((diff % 3600000) / 60000).toString().padStart(2, '0');
+        const secs = Math.floor((diff % 60000) / 1000).toString().padStart(2, '0');
+
+        document.getElementById('timer').innerText = `${hours}:${mins}:${secs}`;
+    }
+
+    async function init() {
+        masterSequence = getSeededSequence(SEED);
         const today = new Date().setHours(0,0,0,0);
         const daysPassed = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
         
-        const sequence = getSeededSequence(SEED);
-        const dailyID = sequence[daysPassed % TOTAL_POKE];
+        displayMain(masterSequence[daysPassed % TOTAL_POKE]);
+        for(let i=1; i<=4; i++) { // Showing 4 for cleaner mobile view
+            displayHistory(masterSequence[(daysPassed - i) % TOTAL_POKE]);
+        }
+        
+        setInterval(updateTimer, 1000);
+        updateTimer();
+    }
 
-        document.getElementById('current-date').innerText = now.toDateString();
+    async function displayMain(id) {
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+        const data = await res.json();
+        document.getElementById('current-date').innerText = new Date().toDateString();
+        document.getElementById('pokemon-name').innerText = data.name;
+        document.getElementById('pokemon-img').src = data.sprites.other['official-artwork'].front_default;
+    }
 
+    async function displayHistory(id) {
+        const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
+        const data = await res.json();
+        const div = document.createElement('div');
+        div.className = 'hist-item';
+        div.innerHTML = `<img src="${data.sprites.front_default}"><br><strong>${data.name}</strong>`;
+        document.getElementById('history-list').appendChild(div);
+    }
+
+    async function searchPokemon() {
+        const val = document.getElementById('search-input').value.toLowerCase().trim();
+        if(!val) return;
+        
         try {
-            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${dailyID}`);
+            const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${val}`);
             const data = await res.json();
+            const dayIndex = masterSequence.indexOf(data.id);
             
-            document.getElementById('pokemon-name').innerText = data.name;
-            document.getElementById('pokemon-img').src = data.sprites.other['official-artwork'].front_default;
-            
-            document.getElementById('types').innerHTML = data.types.map(t => 
-                `<span class="type-pill ${t.type.name}">${t.type.name}</span>`
-            ).join('');
+            const resultDate = new Date(START_DATE);
+            resultDate.setDate(resultDate.getDate() + dayIndex);
+
+            const resultArea = document.getElementById('search-result');
+            resultArea.style.display = 'block';
+            resultArea.innerHTML = `<strong>${data.name.toUpperCase()}</strong> arrives on:<br><span style="color:var(--pk-blue); font-size: 1.1rem;">${resultDate.toDateString()}</span>`;
         } catch (e) {
-            document.getElementById('pokemon-name').innerText = "Connection Lost";
+            alert("Pokémon not found! Check your spelling.");
         }
     }
 
