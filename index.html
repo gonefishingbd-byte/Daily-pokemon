@@ -8,25 +8,16 @@
         :root { --pk-red: #ff1c1c; --pk-blue: #3b4cca; --bg: #f4f7f9; }
         body { background: var(--bg); font-family: sans-serif; display: flex; flex-direction: column; align-items: center; padding: 20px; }
         .container { background: white; border-radius: 25px; padding: 2rem; box-shadow: 0 15px 35px rgba(0,0,0,0.1); text-align: center; width: 100%; max-width: 400px; }
-        
         #pokemon-img { width: 220px; transition: filter 0.3s; cursor: pointer; }
         .silhouette { filter: brightness(0) !important; }
-        
         .type-pill { display: inline-block; padding: 5px 12px; border-radius: 15px; margin: 3px; color: white; font-size: 0.7rem; font-weight: bold; text-transform: uppercase; }
         .stats { margin-top: 15px; font-size: 0.8rem; background: #eee; padding: 10px; border-radius: 10px; }
-        
         button { padding: 10px 15px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; margin: 5px; }
         .btn-main { background: var(--pk-blue); color: white; width: 100%; }
-        
         .tracker { margin-top: 30px; width: 100%; max-width: 450px; background: white; padding: 20px; border-radius: 20px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); }
         .tracker-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 5px; margin-top: 10px; }
         .tracked-icon { width: 40px; height: 40px; background: #f0f0f0; border-radius: 5px; opacity: 0.3; }
         .tracked-icon.unlocked { opacity: 1; background: #e3f2fd; }
-
-        .search-section { margin-top: 20px; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; }
-        input[type="date"] { padding: 10px; border-radius: 8px; border: 1px solid #ddd; }
-
-        /* Type Colors */
         .fire { background: #ff9d54; } .water { background: #4a90da; } .grass { background: #5fbd58; }
         .electric { background: #f2d144; } .psychic { background: #f97176; } .ice { background: #74cec0; }
         .dragon { background: #0773c7; } .dark { background: #5a5366; } .fairy { background: #ec8fe6; }
@@ -40,17 +31,15 @@
     <div class="container">
         <div id="date-label" style="font-weight: bold; color: #888; margin-bottom: 10px;">TODAY</div>
         <img id="pokemon-img" class="silhouette" src="" alt="?">
-        
         <div id="info-screen" style="display: none;">
             <h1 id="pokemon-name" style="text-transform: capitalize;">?</h1>
             <div id="types"></div>
             <div class="stats">Weaknesses: <div id="weaknesses"></div></div>
         </div>
-        
         <button id="reveal-btn" class="btn-main" onclick="revealCurrent()">WHO'S THAT POKÉMON?</button>
     </div>
 
-    <div class="search-section">
+    <div class="search-section" style="margin-top: 20px; display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 400px; align-items: center;">
         <label style="font-size: 0.8rem; font-weight: bold;">LOOK UP A DATE:</label>
         <div style="display: flex; gap: 5px;">
             <input type="date" id="date-picker">
@@ -79,16 +68,13 @@
         return ids;
     }
 
-    async function loadPokemon(id, isToday = true) {
+    async function loadPokemon(id) {
         const res = await fetch(`https://pokeapi.co/api/v2/pokemon/${id}`);
         const data = await res.json();
-        
         document.getElementById('pokemon-name').innerText = data.name;
         document.getElementById('pokemon-img').src = data.sprites.other['official-artwork'].front_default;
-        
         document.getElementById('types').innerHTML = data.types.map(t => `<span class="type-pill ${t.type.name}">${t.type.name}</span>`).join('');
         
-        // Load Weaknesses
         let weaknesses = new Set();
         for(let t of data.types) {
             const tres = await fetch(t.type.url);
@@ -97,14 +83,7 @@
         }
         document.getElementById('weaknesses').innerHTML = Array.from(weaknesses).map(w => `<span class="type-pill ${w}" style="font-size: 0.5rem;">${w}</span>`).join('');
 
-        if (discovered.includes(id)) {
-            showInfo();
-        }
-        if (discovered.includes(id)) {
-            showInfo();
-        } else {
-            hideInfo();
-        }
+        if (discovered.includes(id)) { showInfo(); } else { hideInfo(); }
     }
 
     function showInfo() {
@@ -123,7 +102,6 @@
         const today = new Date().setHours(0,0,0,0);
         const daysPassed = Math.floor((today - START_DATE) / (1000 * 60 * 60 * 24));
         const id = sequence[daysPassed % 1025];
-        
         if (!discovered.includes(id)) {
             discovered.push(id);
             localStorage.setItem('pokedex', JSON.stringify(discovered));
@@ -148,12 +126,10 @@
         const dateVal = document.getElementById('date-picker').value;
         if (!dateVal) return;
         const pickedDate = new Date(dateVal).setHours(0,0,0,0);
-
         const daysPassed = Math.floor((pickedDate - START_DATE) / (1000 * 60 * 60 * 24));
         const id = sequence[daysPassed % 1025];
-        
         document.getElementById('date-label').innerText = new Date(pickedDate).toDateString();
-        loadPokemon(id, false);
+        loadPokemon(id);
     }
 
     function init() {
